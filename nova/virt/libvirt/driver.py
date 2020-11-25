@@ -5798,6 +5798,10 @@ class LibvirtDriver(driver.ComputeDriver):
                     flavor.extra_specs.get('hw:boot_menu', 'no'))
             else:
                 guest.os_bootmenu = image_meta.properties.hw_boot_menu
+            if caps.host.cpu.arch == fields.Architecture.MIPS64EL:
+                guest.os_loader = "/usr/share/qemu/bios_loongson3.bin"
+                guest.os_loader_type = "rom"
+                guest.os_mach_type = "loongson3-virt"
 
         elif virt_type == "lxc":
             guest.os_init_path = "/sbin/init"
@@ -6037,6 +6041,8 @@ class LibvirtDriver(driver.ComputeDriver):
         # Add PCIe root port controllers for PCI Express machines
         # but only if their amount is configured
 
+        if caps.host.cpu.arch == fields.Architecture.MIPS64EL:
+            return True
         if not CONF.libvirt.num_pcie_ports:
             return False
         if (caps.host.cpu.arch == fields.Architecture.AARCH64 and
@@ -6169,7 +6175,8 @@ class LibvirtDriver(driver.ComputeDriver):
             # Let then add USB Host controller and USB keyboard.
             # x86(-64) and ppc64 have usb host controller and keyboard
             # s390x does not support USB
-            if caps.host.cpu.arch == fields.Architecture.AARCH64:
+            if caps.host.cpu.arch in (fields.Architecture.AARCH64,
+                                      fields.Architecture.MIPS64EL):
                 self._guest_add_usb_host_keyboard(guest)
 
         # Some features are only supported 'qemu' and 'kvm' hypervisor
